@@ -8,14 +8,17 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 
+/**  Highlighter options for shell cod */
 const highlighterOptions = {
   langs: ['shell'],
   themes: ['light-plus', 'dark-plus'],
 };
 
+/** Create a shell highlighter instance*/
 const shellHighlighter: HighlighterGeneric<BundledLanguage, BundledTheme> =
   import.meta.hot?.data.shellHighlighter ?? (await createHighlighter(highlighterOptions));
 
+/** Store the highlighter instance if in hot module replacement mode */
 if (import.meta.hot) {
   import.meta.hot.data.shellHighlighter = shellHighlighter;
 }
@@ -24,24 +27,33 @@ interface ArtifactProps {
   messageId: string;
 }
 
+/**
+ * Artifact component displays artifacts related to chat messages.
+ * @param {ArtifactProps} props - The properties for the Artifact component.
+ * @returns {JSX.Element} The rendered Artifact component.
+ */
 export const Artifact = memo(({ messageId }: ArtifactProps) => {
   const userToggledActions = useRef(false);
   const [showActions, setShowActions] = useState(false);
 
+  /** Retrieve artifacts from the store */
   const artifacts = useStore(workbenchStore.artifacts);
   const artifact = artifacts[messageId];
 
+  /** Compute actions from the artifact's runner */
   const actions = useStore(
     computed(artifact.runner.actions, (actions) => {
       return Object.values(actions);
     }),
   );
 
+  /** Toggle the visibility of actions */
   const toggleActions = () => {
     userToggledActions.current = true;
     setShowActions(!showActions);
   };
 
+  /** Show actions if there are any and the user hasn't toggled them*/
   useEffect(() => {
     if (actions.length && !showActions && !userToggledActions.current) {
       setShowActions(true);
@@ -106,6 +118,11 @@ interface ShellCodeBlockProps {
   code: string;
 }
 
+/**
+ * ShellCodeBlock component renders shell code with syntax highlighting.
+ * @param {ShellCodeBlockProps} props - The properties for the ShellCodeBlock component.
+ * @returns {JSX.Element} The rendered ShellCodeBlock component.
+ */
 function ShellCodeBlock({ classsName, code }: ShellCodeBlockProps) {
   return (
     <div
@@ -124,11 +141,17 @@ interface ActionListProps {
   actions: ActionState[];
 }
 
+/** Animation variants for action items*/
 const actionVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
 
+/**
+ * ActionList component renders a list of actions.
+ * @param {ActionListProps} props - The properties for the ActionList component.
+ * @returns {JSX.Element} The rendered ActionList component.
+ */
 const ActionList = memo(({ actions }: ActionListProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
@@ -189,6 +212,11 @@ const ActionList = memo(({ actions }: ActionListProps) => {
   );
 });
 
+/**
+ * Get the icon color based on the action status.
+ * @param {ActionState['status']} status - The status of the action.
+ * @returns {string | undefined} The CSS class for the icon color.
+ */
 function getIconColor(status: ActionState['status']) {
   switch (status) {
     case 'pending': {

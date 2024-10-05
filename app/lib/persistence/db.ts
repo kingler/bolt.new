@@ -4,7 +4,11 @@ import type { ChatHistoryItem } from './useChatHistory';
 
 const logger = createScopedLogger('ChatHistory');
 
-// this is used at the top level and never rejects
+/**
+ * Opens the IndexedDB database for chat history.
+ *
+ * @returns {Promise<IDBDatabase | undefined>} A promise that resolves to the opened database or undefined if an error occurs.
+ */
 export async function openDatabase(): Promise<IDBDatabase | undefined> {
   return new Promise((resolve) => {
     const request = indexedDB.open('boltHistory', 1);
@@ -30,6 +34,12 @@ export async function openDatabase(): Promise<IDBDatabase | undefined> {
   });
 }
 
+/**
+ * Retrieves all chat history items from the database.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @returns {Promise<ChatHistoryItem[]>} A promise that resolves to an array of chat history items.
+ */
 export async function getAll(db: IDBDatabase): Promise<ChatHistoryItem[]> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction('chats', 'readonly');
@@ -41,6 +51,16 @@ export async function getAll(db: IDBDatabase): Promise<ChatHistoryItem[]> {
   });
 }
 
+/**
+ * Stores chat messages in the database.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @param {string} id - The chat ID.
+ * @param {Message[]} messages - The chat messages to store.
+ * @param {string} [urlId] - The URL ID for the chat.
+ * @param {string} [description] - The description of the chat.
+ * @returns {Promise<void>} A promise that resolves when the messages are successfully stored.
+ */
 export async function setMessages(
   db: IDBDatabase,
   id: string,
@@ -65,10 +85,24 @@ export async function setMessages(
   });
 }
 
+/**
+ * Retrieves chat messages from the database by ID or URL ID.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @param {string} id - The chat ID or URL ID.
+ * @returns {Promise<ChatHistoryItem>} A promise that resolves to the chat history item.
+ */
 export async function getMessages(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {
   return (await getMessagesById(db, id)) || (await getMessagesByUrlId(db, id));
 }
 
+/**
+ * Retrieves chat messages from the database by URL ID.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @param {string} id - The URL ID.
+ * @returns {Promise<ChatHistoryItem>} A promise that resolves to the chat history item.
+ */
 export async function getMessagesByUrlId(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction('chats', 'readonly');
@@ -81,6 +115,13 @@ export async function getMessagesByUrlId(db: IDBDatabase, id: string): Promise<C
   });
 }
 
+/**
+ * Retrieves chat messages from the database by chat ID.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @param {string} id - The chat ID.
+ * @returns {Promise<ChatHistoryItem>} A promise that resolves to the chat history item.
+ */
 export async function getMessagesById(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction('chats', 'readonly');
@@ -92,6 +133,13 @@ export async function getMessagesById(db: IDBDatabase, id: string): Promise<Chat
   });
 }
 
+/**
+ * Deletes chat messages from the database by chat ID.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @param {string} id - The chat ID.
+ * @returns {Promise<void>} A promise that resolves when the messages are successfully deleted.
+ */
 export async function deleteById(db: IDBDatabase, id: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction('chats', 'readwrite');
@@ -103,6 +151,12 @@ export async function deleteById(db: IDBDatabase, id: string): Promise<void> {
   });
 }
 
+/**
+ * Generates the next available chat ID.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @returns {Promise<string>} A promise that resolves to the next available chat ID.
+ */
 export async function getNextId(db: IDBDatabase): Promise<string> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction('chats', 'readonly');
@@ -118,6 +172,13 @@ export async function getNextId(db: IDBDatabase): Promise<string> {
   });
 }
 
+/**
+ * Generates a unique URL ID for the chat.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @param {string} id - The base ID for the URL.
+ * @returns {Promise<string>} A promise that resolves to a unique URL ID.
+ */
 export async function getUrlId(db: IDBDatabase, id: string): Promise<string> {
   const idList = await getUrlIds(db);
 
@@ -134,6 +195,12 @@ export async function getUrlId(db: IDBDatabase, id: string): Promise<string> {
   }
 }
 
+/**
+ * Retrieves all URL IDs from the database.
+ *
+ * @param {IDBDatabase} db - The IndexedDB database instance.
+ * @returns {Promise<string[]>} A promise that resolves to an array of URL IDs.
+ */
 async function getUrlIds(db: IDBDatabase): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction('chats', 'readonly');

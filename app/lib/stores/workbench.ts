@@ -211,7 +211,13 @@ export class WorkbenchStore {
   }
 
   abortAllActions() {
-    // TODO: what do we wanna do and how do we wanna recover from this?
+    // Abort all running actions and reset their states to ensure a clean slate.
+    for (const artifact of Object.values(this.artifacts.get())) {
+      artifact.runner.abortAllActions();
+    }
+
+    // Optionally, we can log the abort action for debugging purposes.
+    console.log('All actions have been aborted and their states have been reset.');
   }
 
   addArtifact({ messageId, title, id }: ArtifactCallbackData) {
