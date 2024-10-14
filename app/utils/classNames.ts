@@ -4,6 +4,9 @@
  *
  * @link http://jedwatson.github.io/classnames
  */
+import type { ClassValue } from 'clsx';
+import clsx from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 type ClassNamesArg = undefined | string | Record<string, boolean> | ClassNamesArg[];
 
@@ -58,4 +61,8 @@ function appendClass(value: string, newClass: string | undefined) {
   }
 
   return value + newClass;
+}
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }

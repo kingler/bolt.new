@@ -1,5 +1,5 @@
 import type { Message } from 'ai';
-import React, { type RefCallback } from 'react';
+import React, { type RefCallback, useState, useRef, useEffect } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
@@ -7,6 +7,7 @@ import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
+import ProjectSettings from '../ProjectSettings';
 
 import styles from './BaseChat.module.scss';
 
@@ -58,6 +59,23 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     ref,
   ) => {
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+    const [showSettings, setShowSettings] = useState(false);
+    const [localInput, setLocalInput] = useState(input);
+
+    useEffect(() => {
+      setLocalInput(input);
+    }, [input]);
+
+    const handleLocalInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setLocalInput(event.target.value);
+      handleInputChange?.(event);
+    };
+
+    const handleSendMessage = (event: React.UIEvent) => {
+      if (sendMessage) {
+        sendMessage(event, localInput);
+      }
+    };
 
     return (
       <div
@@ -112,20 +130,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     ref={textareaRef}
                     className={`w-full pl-4 pt-4 pr-16 focus:outline-none resize-none text-md text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent`}
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        if (event.shiftKey) {
-                          return;
-                        }
-
+                      if (event.key === 'Enter' && !event.shiftKey) {
                         event.preventDefault();
-
-                        sendMessage?.(event);
+                        handleSendMessage(event);
                       }
                     }}
-                    value={input}
-                    onChange={(event) => {
-                      handleInputChange?.(event);
-                    }}
+                    value={localInput}
+                    onChange={handleLocalInputChange}
                     style={{
                       minHeight: TEXTAREA_MIN_HEIGHT,
                       maxHeight: TEXTAREA_MAX_HEIGHT,
@@ -136,15 +147,14 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   <ClientOnly>
                     {() => (
                       <SendButton
-                        show={input.length > 0 || isStreaming}
+                        show={localInput.length > 0 || isStreaming}
                         isStreaming={isStreaming}
                         onClick={(event) => {
                           if (isStreaming) {
                             handleStop?.();
-                            return;
+                          } else {
+                            handleSendMessage(event);
                           }
-
-                          sendMessage?.(event);
                         }}
                       />
                     )}
@@ -153,7 +163,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <div className="flex gap-1 items-center">
                       <IconButton
                         title="Enhance prompt"
-                        disabled={input.length === 0 || enhancingPrompt}
+                        disabled={localInput.length === 0 || enhancingPrompt}
                         className={classNames({
                           'opacity-100!': enhancingPrompt,
                           'text-bolt-elements-item-contentAccent! pr-1.5 enabled:hover:bg-bolt-elements-item-backgroundAccent!':
@@ -173,34 +183,40 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           </>
                         )}
                       </IconButton>
+                      <IconButton
+                        title="Project Settings"
+                        onClick={() => setShowSettings(!showSettings)}
+                        className={classNames({
+                          'text-bolt-elements-item-contentAccent!': showSettings,
+                        })}
+                      >
+                        <div className="i-bolt:settings text-xl"></div>
+                      </IconButton>
                     </div>
-                    {input.length > 3 ? (
+                    {localInput.length > 3 ? (
                       <div className="text-xs text-bolt-elements-textTertiary">
                         Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
                       </div>
                     ) : null}
                   </div>
                 </div>
+                {showSettings && <ProjectSettings />}
                 <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
               </div>
             </div>
             {!chatStarted && (
               <div id="examples" className="relative w-full max-w-xl mx-auto mt-8 flex justify-center">
                 <div className="flex flex-col space-y-2 [mask-image:linear-gradient(to_bottom,black_0%,transparent_180%)] hover:[mask-image:none]">
-                  {EXAMPLE_PROMPTS.map((examplePrompt, index) => {
-                    return (
-                      <button
-                        key={index}
-                        onClick={(event) => {
-                          sendMessage?.(event, examplePrompt.text);
-                        }}
-                        className="group flex items-center w-full gap-2 justify-center bg-transparent text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-theme"
-                      >
-                        {examplePrompt.text}
-                        <div className="i-ph:arrow-bend-down-left" />
-                      </button>
-                    );
-                  })}
+                  {EXAMPLE_PROMPTS.map((examplePrompt, index) => (
+                    <button
+                      key={index}
+                      onClick={(event) => sendMessage?.(event, examplePrompt.text)}
+                      className="group flex items-center w-full gap-2 justify-center bg-transparent text-bolt-elements-textTertiary hover:text-bolt-elements-textPrimary transition-theme"
+                    >
+                      {examplePrompt.text}
+                      <div className="i-ph:arrow-bend-down-left" />
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

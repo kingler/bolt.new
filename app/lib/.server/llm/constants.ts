@@ -3,3 +3,13 @@ export const MAX_TOKENS = 8192;
 
 // limits the number of model responses that can be returned in a single request
 export const MAX_RESPONSE_SEGMENTS = 2;
+
+export const WORK_DIR = '/path/to/working/directory';
+
+import { UiLibrary } from '~/types/library';
+
+// ... existing constants ...
+
+export const AVAILABLE_UILIBRARIES: UiLibrary[] = ['shadcn', 'nextui', 'flowbite'];
+
+// ... existing constants ...
